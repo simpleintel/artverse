@@ -57,6 +57,9 @@ jobs:
             REPLICATE_API_TOKEN=${{ secrets.REPLICATE_API_TOKEN }}
             STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
             CLIENT_URL=${{ secrets.CLIENT_URL }}
+            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
 
       - name: Show deployment URL
         run: |
