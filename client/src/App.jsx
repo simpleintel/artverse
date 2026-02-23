@@ -8,16 +8,14 @@ import Explore from './pages/Explore';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import VerifyEmail from './pages/VerifyEmail';
 import Docs from './pages/Docs';
 
 export default function App() {
-  const { loading, needsVerification } = useAuth();
+  const { loading } = useAuth();
   const location = useLocation();
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
   const isDocsPage = location.pathname === '/docs';
-  const isVerifyPage = location.pathname === '/verify';
-  const isFullWidthPage = isAuthPage || isDocsPage || isVerifyPage;
+  const isFullWidthPage = isAuthPage || isDocsPage;
 
   if (loading) {
     return (
@@ -25,10 +23,6 @@ export default function App() {
         <div className="w-7 h-7 border-[3px] border-accent-violet/20 border-t-accent-violet rounded-full animate-spin" />
       </div>
     );
-  }
-
-  if (needsVerification && !isVerifyPage && !isAuthPage) {
-    return <Navigate to="/verify" replace />;
   }
 
   return (
@@ -41,7 +35,6 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/verify" element={<VerifyEmail />} />
           <Route path="/docs" element={<Docs />} />
           <Route path="/" element={<Explore />} />
           <Route path="/feed" element={<ProtectedRoute><Feed /></ProtectedRoute>} />

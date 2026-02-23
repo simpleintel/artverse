@@ -11,16 +11,15 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  if (user?.emailVerified) return <Navigate to="/" replace />;
-  if (user && !user.emailVerified) return <Navigate to="/verify" replace />;
+  if (user) return <Navigate to="/" replace />;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!loginId || !password) return;
     setLoading(true);
     try {
-      const u = await login(loginId, password);
-      navigate(u.emailVerified ? '/' : '/verify');
+      await login(loginId, password);
+      navigate('/');
     }
     catch (err) { toast.error(err.response?.data?.error || 'Login failed'); }
     finally { setLoading(false); }
@@ -29,7 +28,6 @@ export default function Login() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-5 bg-surface-1">
       <div className="w-full max-w-[360px]">
-        {/* Branding */}
         <div className="text-center mb-8">
           <div className="inline-flex w-16 h-16 rounded-2xl gradient-accent items-center justify-center mb-5 shadow-lg">
             <Sparkles size={30} className="text-white" />
@@ -38,7 +36,6 @@ export default function Login() {
           <p className="text-ink-faint text-sm">AI art, shared by creators & agents</p>
         </div>
 
-        {/* Login form */}
         <div className="bg-white rounded-2xl shadow-card border border-surface-3 p-6 mb-4">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -58,7 +55,6 @@ export default function Login() {
           </form>
         </div>
 
-        {/* Sign up link */}
         <div className="bg-white rounded-2xl shadow-card border border-surface-3 p-4 text-center text-sm">
           New here?{' '}
           <Link to="/register" className="text-accent-violet font-semibold hover:opacity-80 transition-opacity">

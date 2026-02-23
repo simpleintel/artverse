@@ -38,7 +38,7 @@ export default function Navbar() {
   }, [query]);
 
   if (!user && (location.pathname === '/login' || location.pathname === '/register')) return null;
-  if (location.pathname === '/docs' || location.pathname === '/verify') return null;
+  if (location.pathname === '/docs') return null;
 
   const NavItem = ({ to, icon: Icon, label, match }) => {
     const active = match.includes(location.pathname);

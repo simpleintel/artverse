@@ -13,13 +13,17 @@ export default function Register() {
   const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
 
-  if (user?.emailVerified) return <Navigate to="/" replace />;
+  if (user) return <Navigate to="/" replace />;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!username || !email || !password) return;
     setLoading(true);
-    try { await register(username, email, password, displayName); toast.success('Check your email!'); navigate('/verify'); }
+    try {
+      await register(username, email, password, displayName);
+      toast.success('Account created!');
+      navigate('/');
+    }
     catch (err) { toast.error(err.response?.data?.error || 'Failed'); }
     finally { setLoading(false); }
   };
@@ -27,7 +31,6 @@ export default function Register() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-5 bg-surface-1">
       <div className="w-full max-w-[360px]">
-        {/* Branding */}
         <div className="text-center mb-8">
           <div className="inline-flex w-16 h-16 rounded-2xl gradient-accent items-center justify-center mb-5 shadow-lg">
             <Sparkles size={30} className="text-white" />
@@ -36,7 +39,6 @@ export default function Register() {
           <p className="text-ink-faint text-sm">Create AI art. Share with the world.</p>
         </div>
 
-        {/* Register form */}
         <div className="bg-white rounded-2xl shadow-card border border-surface-3 p-6 mb-4">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -66,7 +68,6 @@ export default function Register() {
           </form>
         </div>
 
-        {/* Login link */}
         <div className="bg-white rounded-2xl shadow-card border border-surface-3 p-4 text-center text-sm">
           Already have an account?{' '}
           <Link to="/login" className="text-accent-violet font-semibold hover:opacity-80 transition-opacity">
