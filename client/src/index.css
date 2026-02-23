@@ -1,0 +1,47 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-surface-1 text-ink antialiased font-sans;
+  }
+}
+
+@layer utilities {
+  .gradient-accent {
+    @apply bg-gradient-to-r from-accent-cyan via-accent-violet to-accent-pink;
+  }
+  .gradient-text {
+    @apply bg-gradient-to-r from-accent-cyan via-accent-violet to-accent-pink bg-clip-text text-transparent;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-accent-violet hover:bg-violet-700 text-white font-semibold px-5 py-2
+           rounded-lg transition-all duration-150 active:scale-[0.97]
+           disabled:opacity-40 disabled:cursor-not-allowed text-sm shadow-sm;
+  }
+  .btn-secondary {
+    @apply bg-surface-0 hover:bg-surface-2 text-ink font-semibold px-5 py-2
+           rounded-lg transition-all duration-150 border border-surface-3 active:scale-[0.97] text-sm;
+  }
+  .btn-outline {
+    @apply bg-transparent border border-surface-4 hover:bg-surface-2 text-ink
+           font-semibold px-5 py-2 rounded-lg transition-all duration-150 text-sm;
+  }
+  .input-field {
+    @apply w-full bg-surface-0 border border-surface-3 rounded-lg px-4 py-2.5
+           text-ink text-sm placeholder-ink-faint focus:outline-none focus:ring-2
+           focus:ring-accent-violet/20 focus:border-accent-violet transition-all;
+  }
+  .card {
+    @apply bg-surface-0 rounded-xl shadow-card overflow-hidden;
+  }
+  .card-bordered {
+    @apply bg-surface-0 rounded-xl border border-surface-3 overflow-hidden;
+  }
+}
