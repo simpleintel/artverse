@@ -6,49 +6,52 @@ import cors from 'cors';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Load .env from project root — safe no-op if file doesn't exist (e.g. Cloud Run)
-try {
-  const envPath = path.join(__dirname, '..', '.env');
-  if (fs.existsSync(envPath)) {
-    const dotenv = await import('dotenv');
-    dotenv.config({ path: envPath });
-  }
-} catch {}
-
-const app = express();
-const PORT = process.env.PORT || 3001;
+// Load .env if it exists (not present on Cloud Run — env vars injected by runtime)
+const envPath = path.join(__dirname, '..', '.env');
+if (fs.existsSync(envPath)) {
+  const dotenv = await import('dotenv');
+  dotenv.default.config({ path: envPath });
+}
 
 if (!process.env.JWT_SECRET) {
   process.env.JWT_SECRET = 'dev-secret-change-in-production';
 }
 
-// Health check must be registered before anything that could fail
+const app = express();
+const PORT = process.env.PORT || 3001;
+
+// Health check — registered first so Cloud Run probe passes even if routes fail
 app.get('/health', (_req, res) => res.status(200).send('ok'));
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
-// Lazy-load routes so env vars are available and any import error is caught
+// Load routes — wrapped in try/catch so the server still starts on failure
 try {
-  const { default: authRoutes } = await import('./routes/auth.js');
-  const { default: postRoutes } = await import('./routes/posts.js');
-  const { default: userRoutes } = await import('./routes/users.js');
-  const { default: commentRoutes } = await import('./routes/comments.js');
-  const { default: generateRoutes } = await import('./routes/generate.js');
-  const { default: agentRoutes } = await import('./routes/agent.js');
-  const { default: billingRoutes } = await import('./routes/billing.js');
+  const [auth, posts, users, comments, generate, agent, billing] = await Promise.all([
+    import('./routes/auth.js'),
+    import('./routes/posts.js'),
+    import('./routes/users.js'),
+    import('./routes/comments.js'),
+    import('./routes/generate.js'),
+    import('./routes/agent.js'),
+    import('./routes/billing.js'),
+  ]);
 
-  app.use('/api/auth', authRoutes);
-  app.use('/api/posts', postRoutes);
-  app.use('/api/users', userRoutes);
-  app.use('/api/comments', commentRoutes);
-  app.use('/api/generate', generateRoutes);
-  app.use('/api/agent', agentRoutes);
-  app.use('/api/billing', billingRoutes);
+  app.use('/api/auth', auth.default);
+  app.use('/api/posts', posts.default);
+  app.use('/api/users', users.default);
+  app.use('/api/comments', comments.default);
+  app.use('/api/generate', generate.default);
+  app.use('/api/agent', agent.default);
+  app.use('/api/billing', billing.default);
+
+  console.log('All routes loaded successfully');
 } catch (err) {
-  console.error('FATAL: Failed to load routes:', err);
-  app.use('/api', (_req, res) => res.status(500).json({ error: 'Server failed to initialize', details: err.message }));
+  console.error('FATAL: Failed to load routes:', err.message);
+  console.error(err.stack);
+  app.use('/api', (_req, res) => res.status(500).json({ error: 'Server initialization failed', details: err.message }));
 }
 
 app.get('/api/docs', (_req, res) => {
@@ -69,9 +72,9 @@ if (fs.existsSync(clientDist)) {
 }
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`ArtVerse server running on port ${PORT}`);
+  console.log(`ArtVerse server listening on port ${PORT}`);
   console.log(`  NODE_ENV=${process.env.NODE_ENV || 'development'}`);
   console.log(`  JWT_SECRET=${process.env.JWT_SECRET ? 'set' : 'MISSING'}`);
-  console.log(`  STRIPE_SECRET_KEY=${process.env.STRIPE_SECRET_KEY ? 'set' : 'not set'}`);
-  console.log(`  REPLICATE_API_TOKEN=${process.env.REPLICATE_API_TOKEN ? 'set' : 'not set'}`);
+  console.log(`  STRIPE=${process.env.STRIPE_SECRET_KEY ? 'set' : '-'}`);
+  console.log(`  REPLICATE=${process.env.REPLICATE_API_TOKEN ? 'set' : '-'}`);
 });
