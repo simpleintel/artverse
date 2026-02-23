@@ -33,7 +33,7 @@ app.use('/uploads', express.static(uploadsDir));
 
 // Load routes — wrapped in try/catch so the server still starts on failure
 try {
-  const [auth, posts, users, comments, generate, agent, billing] = await Promise.all([
+  const [auth, posts, users, comments, generate, agent, billing, caption] = await Promise.all([
     import('./routes/auth.js'),
     import('./routes/posts.js'),
     import('./routes/users.js'),
@@ -41,6 +41,7 @@ try {
     import('./routes/generate.js'),
     import('./routes/agent.js'),
     import('./routes/billing.js'),
+    import('./routes/caption.js'),
   ]);
 
   app.use('/api/auth', auth.default);
@@ -49,6 +50,7 @@ try {
   app.use('/api/comments', comments.default);
   app.use('/api/generate', generate.default);
   app.use('/api/agent', agent.default);
+  app.use('/api/caption', caption.default);
   app.use('/api/billing', billing.default);
 
   console.log('All routes loaded successfully');

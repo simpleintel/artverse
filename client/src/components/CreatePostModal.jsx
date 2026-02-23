@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { X, Upload, Image, Film, Sparkles, Loader2, ArrowLeft, Trash2 } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { X, Upload, Image, Film, Sparkles, Loader2, ArrowLeft, Trash2, Wand2, Crown } from 'lucide-react';
 import api from '../api';
 import toast from 'react-hot-toast';
 
@@ -18,7 +18,13 @@ export default function CreatePostModal({ onClose, onCreated, credits, onBuyCred
   const [generatedUrl, setGeneratedUrl] = useState(null);
   const [generatedModel, setGeneratedModel] = useState('');
   const [mediaType, setMediaType] = useState('image');
+  const [captioning, setCaptioning] = useState(false);
+  const [captionSub, setCaptionSub] = useState(null);
   const fileRef = useRef(null);
+
+  useEffect(() => {
+    api.get('/caption/status').then(({ data }) => setCaptionSub(data)).catch(() => {});
+  }, []);
 
   const loadModels = async () => { if (models) return; try { const { data } = await api.get('/generate/models'); setModels(data); } catch {} };
   const handleTabSwitch = (t) => { setTab(t); if (t === 'generate') loadModels(); };
@@ -41,6 +47,41 @@ export default function CreatePostModal({ onClose, onCreated, credits, onBuyCred
 
   const creditCost = genType === 'video' ? 5 : 1;
   const notEnoughCredits = credits !== null && credits !== undefined && credits < creditCost;
+
+  const handleAutoCaption = async () => {
+    if (captioning) return;
+    setCaptioning(true);
+    try {
+      let imageUrl;
+      if (tab === 'upload' && files.length > 0) {
+        const form = new FormData(); form.append('media', files[0]);
+        const { data: uploadData } = await api.post('/posts/upload-temp', form);
+        imageUrl = uploadData.url;
+      } else if (generatedUrl) {
+        imageUrl = generatedUrl;
+      }
+      if (!imageUrl) { toast.error('No image to analyze'); return; }
+
+      const { data } = await api.post('/caption/generate', { imageUrl });
+      setCaption(data.title ? `${data.title}\n\n${data.description}` : data.description);
+      toast.success('Caption generated!');
+    } catch (err) {
+      if (err.response?.data?.subscriptionRequired) {
+        toast.error('Nova AI subscription required — $4.99/mo');
+      } else {
+        toast.error(err.response?.data?.error || 'Failed to generate caption');
+      }
+    } finally { setCaptioning(false); }
+  };
+
+  const handleSubscribe = async () => {
+    try {
+      const { data } = await api.post('/caption/subscribe', { username: '' });
+      if (data.url) window.location.href = data.url;
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed');
+    }
+  };
 
   const handleGenerate = async () => {
     if (!prompt.trim() || generating) return;
@@ -83,13 +124,34 @@ export default function CreatePostModal({ onClose, onCreated, credits, onBuyCred
   };
 
   const hasMedia = tab === 'upload' ? files.length > 0 : !!generatedUrl;
+  const isSubscribed = captionSub?.subscribed;
+
+  const AutoCaptionButton = () => (
+    <div className="mt-2">
+      {isSubscribed ? (
+        <button onClick={handleAutoCaption} disabled={captioning}
+          className="flex items-center gap-1.5 text-xs font-semibold text-violet-600 hover:text-violet-800 transition-colors disabled:opacity-40">
+          {captioning ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
+          {captioning ? 'Generating caption...' : 'Auto Caption with AI'}
+        </button>
+      ) : (
+        <div className="flex items-center gap-2">
+          <button onClick={handleSubscribe}
+            className="flex items-center gap-1.5 text-xs font-semibold text-amber-600 hover:text-amber-800 transition-colors">
+            <Crown size={12} /> Nova AI — Auto Caption ($4.99/mo)
+          </button>
+        </div>
+      )}
+      <p className="text-[10px] text-ink-faint mt-1">AI-generated titles & descriptions require Nova AI. Manual captions are always free.</p>
+    </div>
+  );
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 backdrop-blur-sm animate-fade-in" onClick={onClose}>
       <div className="w-full max-w-lg bg-surface-0 rounded-2xl shadow-modal overflow-hidden animate-slide-up max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between h-12 border-b border-surface-3 px-4 shrink-0">
           {step === 'caption' ? (
-            <button onClick={() => { if (tab === 'upload') { setStep('select'); } else { setStep('select'); } }} className="text-ink-muted hover:text-ink transition-colors"><ArrowLeft size={20} /></button>
+            <button onClick={() => setStep('select')} className="text-ink-muted hover:text-ink transition-colors"><ArrowLeft size={20} /></button>
           ) : <div />}
           <h2 className="text-sm font-bold">New Creation</h2>
           {step === 'caption' && hasMedia ? (
@@ -202,7 +264,10 @@ export default function CreatePostModal({ onClose, onCreated, credits, onBuyCred
                 </div>
                 <textarea value={caption} onChange={e => setCaption(e.target.value)} placeholder="Write a caption for all..."
                   rows={3} className="input-field resize-none" maxLength={2200} />
-                <div className="text-right text-[11px] text-ink-faint">{caption.length}/2,200</div>
+                <div className="flex items-center justify-between">
+                  <div className="text-[11px] text-ink-faint">{caption.length}/2,200</div>
+                </div>
+                <AutoCaptionButton />
                 <input ref={fileRef} type="file" accept="image/*,video/*" multiple onChange={handleFiles} className="hidden" />
               </div>
             ) : (
@@ -226,6 +291,7 @@ export default function CreatePostModal({ onClose, onCreated, credits, onBuyCred
                   <textarea value={caption} onChange={e => setCaption(e.target.value)} placeholder="Write a caption..."
                     rows={6} className="flex-1 bg-transparent text-sm placeholder-ink-faint focus:outline-none resize-none" maxLength={2200} />
                   <div className="text-right text-[11px] text-ink-faint">{caption.length}/2,200</div>
+                  <AutoCaptionButton />
                 </div>
               </div>
             )}

@@ -30,6 +30,11 @@ const upload = multer({
 
 const router = Router();
 
+router.post('/upload-temp', authenticate, upload.single('media'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'File required' });
+  res.json({ url: `/uploads/${req.file.filename}` });
+});
+
 function formatPost(p, userId = 0) {
   return {
     id: p.id,

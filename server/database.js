@@ -100,6 +100,10 @@ try { db.exec('ALTER TABLE users ADD COLUMN email_verified INTEGER DEFAULT 0'); 
 try { db.exec('ALTER TABLE users ADD COLUMN google_id TEXT'); } catch {}
 // Profile banner
 try { db.exec("ALTER TABLE users ADD COLUMN banner TEXT DEFAULT ''"); } catch {}
+// AI Caption subscription
+try { db.exec('ALTER TABLE users ADD COLUMN caption_sub_id TEXT'); } catch {}
+try { db.exec('ALTER TABLE users ADD COLUMN caption_sub_status TEXT DEFAULT \'none\''); } catch {}
+try { db.exec('ALTER TABLE users ADD COLUMN caption_sub_end DATETIME'); } catch {}
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS verification_codes (
