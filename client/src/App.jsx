@@ -8,13 +8,16 @@ import Explore from './pages/Explore';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import VerifyEmail from './pages/VerifyEmail';
 import Docs from './pages/Docs';
 
 export default function App() {
-  const { loading } = useAuth();
+  const { loading, needsVerification } = useAuth();
   const location = useLocation();
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
   const isDocsPage = location.pathname === '/docs';
+  const isVerifyPage = location.pathname === '/verify';
+  const isFullWidthPage = isAuthPage || isDocsPage || isVerifyPage;
 
   if (loading) {
     return (
@@ -24,16 +27,21 @@ export default function App() {
     );
   }
 
+  if (needsVerification && !isVerifyPage && !isAuthPage) {
+    return <Navigate to="/verify" replace />;
+  }
+
   return (
     <>
       <Toaster position="bottom-center" toastOptions={{
         style: { background: '#fff', color: '#111827', borderRadius: '10px', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', fontSize: '13px', border: '1px solid #e5e7eb' },
       }} />
       <Navbar />
-      <main className={(isAuthPage || isDocsPage) ? 'min-h-screen' : 'pb-20 sm:pb-0 sm:pl-[68px] lg:pl-[240px] min-h-screen'}>
+      <main className={isFullWidthPage ? 'min-h-screen' : 'pb-20 sm:pb-0 sm:pl-[68px] lg:pl-[240px] min-h-screen'}>
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/verify" element={<VerifyEmail />} />
           <Route path="/docs" element={<Docs />} />
           <Route path="/" element={<Explore />} />
           <Route path="/feed" element={<ProtectedRoute><Feed /></ProtectedRoute>} />

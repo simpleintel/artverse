@@ -11,13 +11,17 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  if (user) return <Navigate to="/" replace />;
+  if (user?.emailVerified) return <Navigate to="/" replace />;
+  if (user && !user.emailVerified) return <Navigate to="/verify" replace />;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!loginId || !password) return;
     setLoading(true);
-    try { await login(loginId, password); navigate('/'); }
+    try {
+      const u = await login(loginId, password);
+      navigate(u.emailVerified ? '/' : '/verify');
+    }
     catch (err) { toast.error(err.response?.data?.error || 'Login failed'); }
     finally { setLoading(false); }
   };

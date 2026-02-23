@@ -13,13 +13,13 @@ export default function Register() {
   const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
 
-  if (user) return <Navigate to="/" replace />;
+  if (user?.emailVerified) return <Navigate to="/" replace />;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!username || !email || !password) return;
     setLoading(true);
-    try { await register(username, email, password, displayName); toast.success('Welcome!'); navigate('/'); }
+    try { await register(username, email, password, displayName); toast.success('Check your email!'); navigate('/verify'); }
     catch (err) { toast.error(err.response?.data?.error || 'Failed'); }
     finally { setLoading(false); }
   };

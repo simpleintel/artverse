@@ -93,6 +93,21 @@ try { db.exec('ALTER TABLE users ADD COLUMN stripe_customer_id TEXT'); } catch {
 // Stripe Connect columns for creator payouts
 try { db.exec('ALTER TABLE users ADD COLUMN stripe_connect_id TEXT'); } catch {}
 try { db.exec('ALTER TABLE users ADD COLUMN stripe_connect_onboarded INTEGER DEFAULT 0'); } catch {}
+// Email verification
+try { db.exec('ALTER TABLE users ADD COLUMN email_verified INTEGER DEFAULT 0'); } catch {}
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS verification_codes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    code TEXT NOT NULL,
+    expires_at DATETIME NOT NULL,
+    used INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+  CREATE INDEX IF NOT EXISTS idx_verif_user ON verification_codes(user_id);
+`);
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS credit_transactions (

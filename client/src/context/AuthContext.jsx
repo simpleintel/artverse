@@ -40,8 +40,10 @@ export function AuthProvider({ children }) {
 
   const updateUser = (updates) => setUser(prev => prev ? { ...prev, ...updates } : null);
 
+  const needsVerification = user && !user.emailVerified;
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, updateUser, needsVerification }}>
       {children}
     </AuthContext.Provider>
   );

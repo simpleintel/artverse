@@ -1,10 +1,24 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import db, { generateApiKey, hashApiKey } from '../database.js';
 import { authenticate } from '../middleware/auth.js';
+import { sendVerificationEmail } from '../email.js';
 
 const router = Router();
+
+function generateCode() {
+  return crypto.randomInt(100000, 999999).toString();
+}
+
+function createAndSendCode(userId, email) {
+  const code = generateCode();
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+  db.prepare('UPDATE verification_codes SET used = 1 WHERE user_id = ? AND used = 0').run(userId);
+  db.prepare('INSERT INTO verification_codes (user_id, code, expires_at) VALUES (?, ?, ?)').run(userId, code, expiresAt);
+  sendVerificationEmail(email, code).catch(err => console.error('Failed to send verification email:', err));
+}
 
 router.post('/register', (req, res) => {
   const { username, email, password, displayName } = req.body;
@@ -17,6 +31,9 @@ router.post('/register', (req, res) => {
   }
   if (!/^[a-zA-Z0-9_]+$/.test(username)) {
     return res.status(400).json({ error: 'Username can only contain letters, numbers, and underscores' });
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return res.status(400).json({ error: 'Please enter a valid email address' });
   }
 
   const existing = db.prepare('SELECT id FROM users WHERE username = ? OR email = ?').get(username.toLowerCase(), email.toLowerCase());
@@ -31,6 +48,8 @@ router.post('/register', (req, res) => {
 
   const token = jwt.sign({ userId: result.lastInsertRowid }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
+  createAndSendCode(result.lastInsertRowid, email.toLowerCase());
+
   res.status(201).json({
     token,
     user: {
@@ -39,7 +58,8 @@ router.post('/register', (req, res) => {
       email: email.toLowerCase(),
       displayName: displayName || username,
       bio: '',
-      avatar: ''
+      avatar: '',
+      emailVerified: false,
     }
   });
 });
@@ -57,6 +77,13 @@ router.post('/login', (req, res) => {
 
   const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
+  if (!user.email_verified) {
+    const pending = db.prepare(
+      "SELECT id FROM verification_codes WHERE user_id = ? AND used = 0 AND expires_at > datetime('now')"
+    ).get(user.id);
+    if (!pending) createAndSendCode(user.id, user.email);
+  }
+
   res.json({
     token,
     user: {
@@ -65,14 +92,50 @@ router.post('/login', (req, res) => {
       email: user.email,
       displayName: user.display_name,
       bio: user.bio,
-      avatar: user.avatar
+      avatar: user.avatar,
+      emailVerified: !!user.email_verified,
     }
   });
 });
 
+router.post('/verify-email', authenticate, (req, res) => {
+  const { code } = req.body;
+  if (!code) return res.status(400).json({ error: 'Verification code is required' });
+
+  const user = db.prepare('SELECT email_verified FROM users WHERE id = ?').get(req.userId);
+  if (user?.email_verified) return res.json({ verified: true, message: 'Already verified' });
+
+  const row = db.prepare(
+    "SELECT id FROM verification_codes WHERE user_id = ? AND code = ? AND used = 0 AND expires_at > datetime('now')"
+  ).get(req.userId, code.trim());
+
+  if (!row) {
+    return res.status(400).json({ error: 'Invalid or expired code. Request a new one.' });
+  }
+
+  db.prepare('UPDATE verification_codes SET used = 1 WHERE id = ?').run(row.id);
+  db.prepare('UPDATE users SET email_verified = 1 WHERE id = ?').run(req.userId);
+
+  res.json({ verified: true, message: 'Email verified!' });
+});
+
+router.post('/resend-code', authenticate, (req, res) => {
+  const user = db.prepare('SELECT email, email_verified FROM users WHERE id = ?').get(req.userId);
+  if (!user) return res.status(404).json({ error: 'User not found' });
+  if (user.email_verified) return res.json({ message: 'Already verified' });
+
+  const recent = db.prepare(
+    "SELECT id FROM verification_codes WHERE user_id = ? AND used = 0 AND created_at > datetime('now', '-1 minute')"
+  ).get(req.userId);
+  if (recent) return res.status(429).json({ error: 'Please wait a minute before requesting a new code' });
+
+  createAndSendCode(req.userId, user.email);
+  res.json({ message: 'New code sent to ' + user.email });
+});
+
 router.get('/me', authenticate, (req, res) => {
   const user = db.prepare(
-    'SELECT id, username, email, display_name, bio, avatar, credits, created_at FROM users WHERE id = ?'
+    'SELECT id, username, email, display_name, bio, avatar, credits, email_verified, created_at FROM users WHERE id = ?'
   ).get(req.userId);
   if (!user) return res.status(404).json({ error: 'User not found' });
 
@@ -83,7 +146,7 @@ router.get('/me', authenticate, (req, res) => {
       (SELECT COUNT(*) FROM follows WHERE follower_id = ?) as following
   `).get(req.userId, req.userId, req.userId);
 
-  res.json({ ...user, displayName: user.display_name, ...stats });
+  res.json({ ...user, displayName: user.display_name, emailVerified: !!user.email_verified, ...stats });
 });
 
 router.post('/api-key', authenticate, (req, res) => {
