@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Link, useNavigate, Navigate } from 'react-router-dom';
 import { Sparkles, Loader2 } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
 export default function Register() {
-  const { user, register } = useAuth();
+  const { user, register, googleLogin } = useAuth();
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -28,6 +29,16 @@ export default function Register() {
     finally { setLoading(false); }
   };
 
+  const handleGoogle = async (credentialResponse) => {
+    try {
+      await googleLogin(credentialResponse.credential);
+      toast.success('Welcome to ArtVerse!');
+      navigate('/');
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Google sign-up failed');
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-5 bg-surface-1">
       <div className="w-full max-w-[360px]">
@@ -40,6 +51,23 @@ export default function Register() {
         </div>
 
         <div className="bg-white rounded-2xl shadow-card border border-surface-3 p-6 mb-4">
+          <div className="flex justify-center mb-4">
+            <GoogleLogin
+              onSuccess={handleGoogle}
+              onError={() => toast.error('Google sign-up failed')}
+              shape="rectangular"
+              size="large"
+              width="312"
+              text="signup_with"
+            />
+          </div>
+
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex-1 h-px bg-surface-3" />
+            <span className="text-xs text-ink-faint font-medium">or</span>
+            <div className="flex-1 h-px bg-surface-3" />
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <input type="text" placeholder="Display name" value={displayName}

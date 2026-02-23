@@ -9,13 +9,15 @@ import Profile from './pages/Profile';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Docs from './pages/Docs';
+import About from './pages/About';
 
 export default function App() {
   const { loading } = useAuth();
   const location = useLocation();
   const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
   const isDocsPage = location.pathname === '/docs';
-  const isFullWidthPage = isAuthPage || isDocsPage;
+  const isAboutPage = location.pathname === '/about';
+  const isFullWidthPage = isAuthPage || isDocsPage || isAboutPage;
 
   if (loading) {
     return (
@@ -36,6 +38,7 @@ export default function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/docs" element={<Docs />} />
+          <Route path="/about" element={<About />} />
           <Route path="/" element={<Explore />} />
           <Route path="/feed" element={<ProtectedRoute><Feed /></ProtectedRoute>} />
           <Route path="/explore" element={<Explore />} />

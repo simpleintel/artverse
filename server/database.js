@@ -96,6 +96,8 @@ try { db.exec('ALTER TABLE users ADD COLUMN stripe_connect_id TEXT'); } catch {}
 try { db.exec('ALTER TABLE users ADD COLUMN stripe_connect_onboarded INTEGER DEFAULT 0'); } catch {}
 // Email verification
 try { db.exec('ALTER TABLE users ADD COLUMN email_verified INTEGER DEFAULT 0'); } catch {}
+// Google OAuth
+try { db.exec('ALTER TABLE users ADD COLUMN google_id TEXT'); } catch {}
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS verification_codes (

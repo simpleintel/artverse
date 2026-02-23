@@ -1,10 +1,27 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { OAuth2Client } from 'google-auth-library';
 import db, { generateApiKey, hashApiKey } from '../database.js';
 import { authenticate } from '../middleware/auth.js';
 
 const router = Router();
+
+function getGoogleClient() {
+  return new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+}
+
+function makeUsername(name, email) {
+  const base = (name || email.split('@')[0])
+    .toLowerCase().replace(/[^a-z0-9_]/g, '').slice(0, 20);
+  const existing = db.prepare('SELECT id FROM users WHERE username = ?').get(base);
+  if (!existing) return base;
+  for (let i = 1; i < 9999; i++) {
+    const candidate = `${base}${i}`;
+    if (!db.prepare('SELECT id FROM users WHERE username = ?').get(candidate)) return candidate;
+  }
+  return `user_${Date.now()}`;
+}
 
 router.post('/register', (req, res) => {
   const { username, email, password, displayName } = req.body;
@@ -71,6 +88,57 @@ router.post('/login', (req, res) => {
       avatar: user.avatar,
     }
   });
+});
+
+router.post('/google', async (req, res) => {
+  try {
+    const { credential } = req.body;
+    if (!credential) return res.status(400).json({ error: 'Google credential is required' });
+
+    const client = getGoogleClient();
+    const ticket = await client.verifyIdToken({
+      idToken: credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    const { email, name, picture, sub: googleId } = payload;
+
+    if (!email) return res.status(400).json({ error: 'Could not get email from Google' });
+
+    let user = db.prepare('SELECT * FROM users WHERE email = ?').get(email.toLowerCase());
+
+    if (user) {
+      if (!user.google_id) {
+        db.prepare('UPDATE users SET google_id = ? WHERE id = ?').run(googleId, user.id);
+      }
+      if (picture && !user.avatar) {
+        db.prepare('UPDATE users SET avatar = ? WHERE id = ?').run(picture, user.id);
+      }
+    } else {
+      const username = makeUsername(name, email);
+      const result = db.prepare(
+        'INSERT INTO users (username, email, password_hash, display_name, avatar, google_id) VALUES (?, ?, ?, ?, ?, ?)'
+      ).run(username, email.toLowerCase(), '', name || username, picture || '', googleId);
+      user = db.prepare('SELECT * FROM users WHERE id = ?').get(result.lastInsertRowid);
+    }
+
+    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        displayName: user.display_name,
+        bio: user.bio,
+        avatar: user.avatar,
+      }
+    });
+  } catch (err) {
+    console.error('Google auth error:', err.message);
+    res.status(401).json({ error: 'Google authentication failed' });
+  }
 });
 
 router.get('/me', authenticate, (req, res) => {

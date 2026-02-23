@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, MessageCircle, Play, Sparkles } from 'lucide-react';
+import { Heart, MessageCircle, Play, Sparkles, X, ChevronDown, ChevronUp } from 'lucide-react';
 import api from '../api';
 
 export default function Explore() {
@@ -8,6 +8,8 @@ export default function Explore() {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(true);
+  const [showNote, setShowNote] = useState(() => !sessionStorage.getItem('note-dismissed'));
+  const [noteExpanded, setNoteExpanded] = useState(false);
   const observer = useRef(null);
 
   const fetchPosts = useCallback(async (p) => {
@@ -39,9 +41,81 @@ export default function Explore() {
     );
   }
 
+  const dismissNote = () => { setShowNote(false); sessionStorage.setItem('note-dismissed', '1'); };
+
   return (
     <div className="max-w-[960px] mx-auto px-4 sm:px-5 py-6">
-      <h1 className="text-xl font-bold mb-5">Discover</h1>
+      <div className="mb-5 flex items-center justify-between">
+        <h1 className="text-xl font-bold">Discover</h1>
+        <span className="text-xs font-medium text-ink-faint bg-surface-2 rounded-full px-3 py-1 border border-surface-3">A Constellation of Machine Dreams</span>
+      </div>
+
+      {showNote && (
+        <div className="mb-6 relative overflow-hidden rounded-2xl border border-accent-violet/15 bg-gradient-to-br from-white via-violet-50/40 to-cyan-50/30 shadow-card">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-400 via-violet-500 to-pink-500" />
+          <div className="px-5 sm:px-7 pt-6 pb-5">
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl gradient-accent flex items-center justify-center shadow-sm shrink-0">
+                  <Sparkles size={14} className="text-white" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-ink">A Note from Us</h3>
+                  <p className="text-[11px] text-ink-faint">Community Note</p>
+                </div>
+              </div>
+              <button onClick={dismissNote} className="text-ink-faint hover:text-ink transition-colors p-1 -mr-1 -mt-1">
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="text-sm leading-relaxed text-ink-muted space-y-3">
+              <p>
+                View of Nova was born from a simple belief:
+                <span className="block mt-1 text-ink font-semibold italic">
+                  Creativity is not owned by humans or machines — it is a force that moves through both.
+                </span>
+              </p>
+
+              {noteExpanded && (
+                <div className="space-y-3 animate-fade-in">
+                  <p>
+                    Every piece of AI-generated art begins with a human impulse. A question. A curiosity. A feeling that cannot quite be explained in words. The machine does not replace the artist — it becomes a mirror, a collaborator, a lens into possibility.
+                  </p>
+                  <p className="text-ink font-medium italic">
+                    "Nova" is the moment a star expands into brilliance.
+                  </p>
+                  <p>
+                    We believe creativity works the same way. A small spark — an idea — becomes something luminous when shared.
+                  </p>
+                  <p>This platform exists for those who explore that edge.</p>
+                  <div className="pl-4 border-l-2 border-accent-violet/25 space-y-0.5 py-0.5">
+                    <p className="text-ink text-[13px]">Where code meets imagination.</p>
+                    <p className="text-ink text-[13px]">Where prompts become poetry.</p>
+                    <p className="text-ink text-[13px]">Where algorithms reveal emotion.</p>
+                  </div>
+                  <p>
+                    Art has always been a conversation between tools and vision.
+                    Today, the tools have evolved.
+                    <span className="block mt-1 font-semibold text-ink">The wonder remains.</span>
+                  </p>
+                  <div className="pt-2">
+                    <div className="h-px bg-gradient-to-r from-transparent via-accent-violet/20 to-transparent" />
+                  </div>
+                  <p className="text-center text-ink font-medium tracking-wide">
+                    Welcome to your view of the new light.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <button onClick={() => setNoteExpanded(!noteExpanded)}
+              className="mt-3 flex items-center gap-1 text-xs font-semibold text-accent-violet hover:text-accent-violet/80 transition-colors">
+              {noteExpanded ? <><ChevronUp size={14} /> Show less</> : <><ChevronDown size={14} /> Read more</>}
+            </button>
+          </div>
+        </div>
+      )}
       {posts.length === 0 ? (
         <div className="text-center py-20 card p-8">
           <Sparkles size={36} className="text-surface-4 mx-auto mb-4" />

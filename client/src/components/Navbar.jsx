@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Home, Compass, PlusCircle, User, Search, X, LogOut, Sparkles, Zap, Book } from 'lucide-react';
+import { Home, Compass, PlusCircle, User, Search, X, LogOut, Sparkles, Zap, Book, Info } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import CreatePostModal from './CreatePostModal';
 import BuyCreditsModal from './BuyCreditsModal';
@@ -38,7 +38,7 @@ export default function Navbar() {
   }, [query]);
 
   if (!user && (location.pathname === '/login' || location.pathname === '/register')) return null;
-  if (location.pathname === '/docs') return null;
+  if (location.pathname === '/docs' || location.pathname === '/about') return null;
 
   const NavItem = ({ to, icon: Icon, label, match }) => {
     const active = match.includes(location.pathname);
@@ -128,7 +128,13 @@ export default function Navbar() {
           )}
         </div>
 
-        <div className="px-1 mb-1">
+        <div className="px-1 mb-1 space-y-0.5">
+          <Link to="/about"
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all
+              ${location.pathname === '/about' ? 'bg-surface-2 text-ink font-semibold' : 'text-ink-faint hover:bg-surface-2 hover:text-ink'}`}>
+            <Info size={20} strokeWidth={1.5} />
+            <span className="text-[14px] hidden lg:block">About</span>
+          </Link>
           <Link to="/docs"
             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all
               ${location.pathname === '/docs' ? 'bg-surface-2 text-ink font-semibold' : 'text-ink-faint hover:bg-surface-2 hover:text-ink'}`}>
