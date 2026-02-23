@@ -12,12 +12,12 @@ const uploadsDir = process.env.NODE_ENV === 'production'
   ? '/tmp/uploads'
   : path.join(__dirname, '..', '..', 'uploads');
 
-const avatarUpload = multer({
+const profileUpload = multer({
   storage: multer.diskStorage({
     destination: uploadsDir,
-    filename: (_req, file, cb) => cb(null, `avatar-${uuidv4()}${path.extname(file.originalname)}`)
+    filename: (_req, file, cb) => cb(null, `${file.fieldname}-${uuidv4()}${path.extname(file.originalname)}`)
   }),
-  limits: { fileSize: 5 * 1024 * 1024 }
+  limits: { fileSize: 10 * 1024 * 1024 }
 });
 
 const router = Router();
@@ -31,26 +31,30 @@ router.get('/search', (req, res) => {
   res.json(users.map(u => ({ ...u, displayName: u.display_name })));
 });
 
-router.put('/profile/update', authenticate, avatarUpload.single('avatar'), (req, res) => {
+router.put('/profile/update', authenticate, profileUpload.fields([
+  { name: 'avatar', maxCount: 1 },
+  { name: 'banner', maxCount: 1 },
+]), (req, res) => {
   const { displayName, bio } = req.body;
   const updates = [];
   const params = [];
 
   if (displayName !== undefined) { updates.push('display_name = ?'); params.push(displayName); }
   if (bio !== undefined) { updates.push('bio = ?'); params.push(bio); }
-  if (req.file) { updates.push('avatar = ?'); params.push(`/uploads/${req.file.filename}`); }
+  if (req.files?.avatar?.[0]) { updates.push('avatar = ?'); params.push(`/uploads/${req.files.avatar[0].filename}`); }
+  if (req.files?.banner?.[0]) { updates.push('banner = ?'); params.push(`/uploads/${req.files.banner[0].filename}`); }
   if (!updates.length) return res.status(400).json({ error: 'Nothing to update' });
 
   params.push(req.userId);
   db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`).run(...params);
 
-  const user = db.prepare('SELECT id, username, email, display_name, bio, avatar FROM users WHERE id = ?').get(req.userId);
+  const user = db.prepare('SELECT id, username, email, display_name, bio, avatar, banner FROM users WHERE id = ?').get(req.userId);
   res.json({ ...user, displayName: user.display_name });
 });
 
 router.get('/:username', optionalAuth, (req, res) => {
   const user = db.prepare(
-    'SELECT id, username, display_name, bio, avatar, created_at FROM users WHERE username = ?'
+    'SELECT id, username, display_name, bio, avatar, banner, created_at FROM users WHERE username = ?'
   ).get(req.params.username);
   if (!user) return res.status(404).json({ error: 'User not found' });
 

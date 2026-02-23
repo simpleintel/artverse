@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
-import { Grid3X3, List, Heart, Play, Sparkles, Loader2, Camera, MessageCircle, Key, Copy, Check, Zap, DollarSign } from 'lucide-react';
+import { Grid3X3, List, Heart, Play, Sparkles, Loader2, Camera, MessageCircle, Key, Copy, Check, Zap, DollarSign, ImagePlus } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import PostCard from '../components/PostCard';
 import BuyCreditsModal from '../components/BuyCreditsModal';
@@ -79,6 +79,13 @@ export default function Profile() {
     catch { toast.error('Failed'); }
   };
 
+  const handleBannerChange = async (e) => {
+    const file = e.target.files?.[0]; if (!file) return;
+    const form = new FormData(); form.append('banner', file);
+    try { const { data } = await api.put('/users/profile/update', form); setProfile(p => p ? { ...p, banner: data.banner } : null); toast.success('Banner updated'); }
+    catch { toast.error('Failed'); }
+  };
+
   const handleGenerateApiKey = async () => {
     try { const { data } = await api.post('/auth/api-key'); setApiKey(data.key); toast.success('API key generated'); }
     catch { toast.error('Failed'); }
@@ -97,14 +104,31 @@ export default function Profile() {
   return (
     <div className="max-w-[700px] mx-auto px-4 sm:px-5 py-6">
       {/* Header */}
-      <div className="card p-6 mb-4">
-        <div className="flex items-start gap-5 sm:gap-8">
+      <div className="card mb-4 overflow-hidden">
+        {/* Banner */}
+        <div className="relative h-36 sm:h-48 bg-gradient-to-br from-violet-100 via-cyan-50 to-pink-50 group/banner">
+          {profile.banner && (
+            <img src={profile.banner} alt="" className="w-full h-full object-cover" />
+          )}
+          {isOwnProfile && (
+            <label className="absolute inset-0 bg-black/0 group-hover/banner:bg-black/30 flex items-center justify-center cursor-pointer transition-colors">
+              <div className="opacity-0 group-hover/banner:opacity-100 transition-opacity flex items-center gap-2 bg-black/50 text-white text-xs font-semibold rounded-lg px-3 py-2">
+                <ImagePlus size={14} /> {profile.banner ? 'Change banner' : 'Add banner'}
+              </div>
+              <input type="file" accept="image/*" onChange={handleBannerChange} className="hidden" />
+            </label>
+          )}
+        </div>
+
+        <div className="px-6 pb-6">
+        {/* Avatar + info */}
+        <div className="flex items-start gap-5 sm:gap-8 -mt-10 sm:-mt-14">
           <div className="shrink-0 relative group">
-            <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-full overflow-hidden bg-surface-2 ring-[3px] ring-surface-3">
+            <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-full overflow-hidden bg-surface-0 ring-4 ring-white shadow-md">
               {profile.avatar ? (
                 <img src={profile.avatar} alt="" className="w-full h-full object-cover" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-2xl sm:text-4xl font-light text-ink-faint">{profile.username[0].toUpperCase()}</div>
+                <div className="w-full h-full bg-surface-2 flex items-center justify-center text-2xl sm:text-4xl font-light text-ink-faint">{profile.username[0].toUpperCase()}</div>
               )}
             </div>
             {isOwnProfile && (
@@ -204,6 +228,7 @@ export default function Profile() {
             <p className="text-[11px] text-ink-faint mt-1.5">Let AI agents post on your behalf via REST API.</p>
           </div>
         )}
+        </div>
       </div>
 
       {/* Earnings panel (own profile only) */}
