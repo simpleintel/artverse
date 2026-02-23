@@ -1,9 +1,8 @@
 # Stage 1: Build the frontend
-FROM node:20-slim AS builder
+FROM node:20 AS builder
 
 WORKDIR /app
 
-# Install client dependencies and build
 COPY client/package.json client/package-lock.json* ./client/
 RUN cd client && npm ci
 
@@ -11,13 +10,11 @@ COPY client/ ./client/
 RUN cd client && npm run build
 
 # Stage 2: Production server
-FROM node:20-slim
-
-RUN apt-get update && apt-get install -y python3 make g++ && rm -rf /var/lib/apt/lists/*
+FROM node:20
 
 WORKDIR /app
 
-# Install server dependencies
+# Install server dependencies (better-sqlite3 needs build tools, node:20 has them)
 COPY server/package.json server/package-lock.json* ./server/
 RUN cd server && npm ci --omit=dev
 
@@ -29,10 +26,9 @@ COPY --from=builder /app/client/dist ./client/dist
 
 # Copy root files
 COPY API_DOCS.md ./
-COPY .gitignore ./
 
-# Create uploads directory
-RUN mkdir -p uploads
+# Create uploads + data directory
+RUN mkdir -p uploads data
 
 # Cloud Run sets PORT env var (default 8080)
 ENV PORT=8080

@@ -1,8 +1,15 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Load .env from project root (safe — no-ops if file missing)
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
+
 import express from 'express';
 import cors from 'cors';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
 import authRoutes from './routes/auth.js';
 import postRoutes from './routes/posts.js';
@@ -12,13 +19,15 @@ import generateRoutes from './routes/generate.js';
 import agentRoutes from './routes/agent.js';
 import billingRoutes from './routes/billing.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 if (!process.env.JWT_SECRET) {
   process.env.JWT_SECRET = 'dev-secret-change-in-production';
 }
+
+// Health check — Cloud Run pings this to confirm the container is alive
+app.get('/health', (_req, res) => res.status(200).send('ok'));
 
 app.use(cors());
 app.use(express.json());
@@ -32,7 +41,6 @@ app.use('/api/generate', generateRoutes);
 app.use('/api/agent', agentRoutes);
 app.use('/api/billing', billingRoutes);
 
-import fs from 'fs';
 app.get('/api/docs', (_req, res) => {
   try {
     const md = fs.readFileSync(path.join(__dirname, '..', 'API_DOCS.md'), 'utf-8');
@@ -43,7 +51,7 @@ app.get('/api/docs', (_req, res) => {
 const clientDist = path.join(__dirname, '..', 'client', 'dist');
 app.use(express.static(clientDist));
 app.get('*', (req, res) => {
-  if (!req.path.startsWith('/api') && !req.path.startsWith('/uploads')) {
+  if (!req.path.startsWith('/api') && !req.path.startsWith('/uploads') && !req.path.startsWith('/health')) {
     res.sendFile(path.join(clientDist, 'index.html'));
   }
 });
