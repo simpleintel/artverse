@@ -140,7 +140,7 @@ router.post('/generate', authenticate, async (req, res) => {
     return res.status(403).json({
       error: 'Nova AI subscription required',
       subscriptionRequired: true,
-      message: `This is only for AI-generated captions. Subscribe to Nova AI ($4.99/mo) for up to ${MONTHLY_LIMIT} AI captions per month. Writing your own captions is always free — no subscription needed.`,
+      message: `Nova AI lets you auto-generate titles & descriptions using OpenAI — up to ${MONTHLY_LIMIT}/month for $4.99. This small fee covers the cost we pay OpenAI each time it reads your art. Writing your own captions is always free.`,
     });
   }
 
@@ -149,7 +149,7 @@ router.post('/generate', authenticate, async (req, res) => {
     return res.status(429).json({
       error: `Monthly limit reached (${MONTHLY_LIMIT}/${MONTHLY_LIMIT})`,
       limitReached: true,
-      message: `You've used all ${MONTHLY_LIMIT} AI captions this month. Your limit resets on the 1st. You can still write captions manually — that's always free.`,
+      message: `You've used all ${MONTHLY_LIMIT} AI captions this month — resets on the 1st. You can always write your own captions for free.`,
     });
   }
 

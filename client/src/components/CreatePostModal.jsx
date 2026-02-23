@@ -156,8 +156,8 @@ export default function CreatePostModal({ onClose, onCreated, credits, onBuyCred
           <Crown size={12} /> Nova AI — Auto Caption ($4.99/mo, 100/month)
         </button>
       )}
-      <p className="text-[10px] text-ink-faint mt-1">
-        This is <strong>only</strong> for AI-generated titles & descriptions. Writing your own captions is always free — no subscription needed.
+      <p className="text-[10px] text-ink-faint mt-1.5 leading-relaxed">
+        Writing your own captions is always free — no subscription needed. This small fee only covers AI captioning, because we pay OpenAI each time it reads your art. Your support keeps Nova running for everyone.
       </p>
     </div>
   );
