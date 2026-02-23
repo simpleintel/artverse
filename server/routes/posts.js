@@ -82,6 +82,29 @@ router.post('/', authenticate, upload.single('media'), (req, res) => {
   res.status(201).json(formatPost(post, req.userId));
 });
 
+router.post('/batch', authenticate, upload.array('media', 20), (req, res) => {
+  if (!req.files || req.files.length === 0) {
+    return res.status(400).json({ error: 'At least one media file is required' });
+  }
+
+  const caption = req.body.caption || '';
+  const insertPost = db.prepare(
+    'INSERT INTO posts (user_id, caption, media_url, media_type, ai_model, ai_prompt) VALUES (?, ?, ?, ?, ?, ?)'
+  );
+  const selectPost = db.prepare(POST_SELECT + ' WHERE p.id = ?');
+
+  const created = db.transaction(() => {
+    return req.files.map(file => {
+      const url = `/uploads/${file.filename}`;
+      const type = file.mimetype.startsWith('video/') ? 'video' : 'image';
+      const result = insertPost.run(req.userId, caption, url, type, '', '');
+      return formatPost(selectPost.get(req.userId, result.lastInsertRowid), req.userId);
+    });
+  })();
+
+  res.status(201).json({ count: created.length, posts: created });
+});
+
 router.get('/feed', authenticate, (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 20;

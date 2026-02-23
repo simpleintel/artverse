@@ -1,14 +1,13 @@
 import { useState, useRef } from 'react';
-import { X, Upload, Image, Film, Sparkles, Loader2, ArrowLeft } from 'lucide-react';
+import { X, Upload, Image, Film, Sparkles, Loader2, ArrowLeft, Trash2 } from 'lucide-react';
 import api from '../api';
 import toast from 'react-hot-toast';
 
 export default function CreatePostModal({ onClose, onCreated, credits, onBuyCredits }) {
   const [tab, setTab] = useState('upload');
   const [caption, setCaption] = useState('');
-  const [file, setFile] = useState(null);
-  const [preview, setPreview] = useState(null);
-  const [mediaType, setMediaType] = useState('image');
+  const [files, setFiles] = useState([]);
+  const [previews, setPreviews] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [step, setStep] = useState('select');
   const [prompt, setPrompt] = useState('');
@@ -18,15 +17,26 @@ export default function CreatePostModal({ onClose, onCreated, credits, onBuyCred
   const [generating, setGenerating] = useState(false);
   const [generatedUrl, setGeneratedUrl] = useState(null);
   const [generatedModel, setGeneratedModel] = useState('');
+  const [mediaType, setMediaType] = useState('image');
   const fileRef = useRef(null);
 
   const loadModels = async () => { if (models) return; try { const { data } = await api.get('/generate/models'); setModels(data); } catch {} };
   const handleTabSwitch = (t) => { setTab(t); if (t === 'generate') loadModels(); };
 
-  const handleFile = (e) => {
-    const f = e.target.files?.[0]; if (!f) return;
-    setFile(f); setMediaType(f.type.startsWith('video/') ? 'video' : 'image');
-    setPreview(URL.createObjectURL(f)); setStep('caption');
+  const handleFiles = (e) => {
+    const selected = Array.from(e.target.files || []);
+    if (selected.length === 0) return;
+    const newFiles = [...files, ...selected].slice(0, 20);
+    setFiles(newFiles);
+    setPreviews(newFiles.map(f => ({ url: URL.createObjectURL(f), type: f.type.startsWith('video/') ? 'video' : 'image' })));
+    setStep('caption');
+  };
+
+  const removeFile = (idx) => {
+    const newFiles = files.filter((_, i) => i !== idx);
+    setPreviews(prev => prev.filter((_, i) => i !== idx));
+    setFiles(newFiles);
+    if (newFiles.length === 0) setStep('select');
   };
 
   const creditCost = genType === 'video' ? 5 : 1;
@@ -53,26 +63,33 @@ export default function CreatePostModal({ onClose, onCreated, credits, onBuyCred
   const handleSubmit = async () => {
     if (submitting) return; setSubmitting(true);
     try {
-      if (tab === 'upload' && file) {
-        const form = new FormData(); form.append('media', file); form.append('caption', caption);
-        await api.post('/posts', form);
+      if (tab === 'upload' && files.length > 0) {
+        if (files.length === 1) {
+          const form = new FormData(); form.append('media', files[0]); form.append('caption', caption);
+          await api.post('/posts', form);
+        } else {
+          const form = new FormData();
+          files.forEach(f => form.append('media', f));
+          form.append('caption', caption);
+          await api.post('/posts/batch', form);
+        }
       } else if (tab === 'generate' && generatedUrl) {
         await api.post('/posts', { mediaUrl: generatedUrl, mediaType, caption, aiModel: generatedModel, aiPrompt: prompt });
       }
-      toast.success('Shared!'); onCreated?.(); onClose();
+      toast.success(files.length > 1 ? `${files.length} creations shared!` : 'Shared!');
+      onCreated?.(); onClose();
     } catch (err) { toast.error(err.response?.data?.error || 'Failed'); }
     finally { setSubmitting(false); }
   };
 
-  const hasMedia = tab === 'upload' ? !!file : !!generatedUrl;
-  const mediaPreview = tab === 'upload' ? preview : generatedUrl;
+  const hasMedia = tab === 'upload' ? files.length > 0 : !!generatedUrl;
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/30 backdrop-blur-sm animate-fade-in" onClick={onClose}>
-      <div className="w-full max-w-lg bg-surface-0 rounded-2xl shadow-modal overflow-hidden animate-slide-up" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between h-12 border-b border-surface-3 px-4">
+      <div className="w-full max-w-lg bg-surface-0 rounded-2xl shadow-modal overflow-hidden animate-slide-up max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center justify-between h-12 border-b border-surface-3 px-4 shrink-0">
           {step === 'caption' ? (
-            <button onClick={() => setStep('select')} className="text-ink-muted hover:text-ink transition-colors"><ArrowLeft size={20} /></button>
+            <button onClick={() => { if (tab === 'upload') { setStep('select'); } else { setStep('select'); } }} className="text-ink-muted hover:text-ink transition-colors"><ArrowLeft size={20} /></button>
           ) : <div />}
           <h2 className="text-sm font-bold">New Creation</h2>
           {step === 'caption' && hasMedia ? (
@@ -86,7 +103,7 @@ export default function CreatePostModal({ onClose, onCreated, credits, onBuyCred
 
         {step === 'select' ? (
           <>
-            <div className="flex border-b border-surface-3">
+            <div className="flex border-b border-surface-3 shrink-0">
               <button onClick={() => handleTabSwitch('upload')}
                 className={`flex-1 py-2.5 text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors border-b-2 -mb-px
                   ${tab === 'upload' ? 'text-accent-violet border-accent-violet' : 'text-ink-faint border-transparent'}`}>
@@ -98,7 +115,7 @@ export default function CreatePostModal({ onClose, onCreated, credits, onBuyCred
                 <Sparkles size={15} /> Generate
               </button>
             </div>
-            <div className="p-5">
+            <div className="p-5 overflow-y-auto">
               {tab === 'upload' ? (
                 <button onClick={() => fileRef.current?.click()}
                   className="w-full aspect-[4/3] rounded-xl flex flex-col items-center justify-center gap-3 border-2 border-dashed border-surface-4 hover:border-accent-violet/40 hover:bg-violet-50/30 transition-all">
@@ -106,7 +123,7 @@ export default function CreatePostModal({ onClose, onCreated, credits, onBuyCred
                     <Upload size={24} className="text-accent-violet" />
                   </div>
                   <p className="text-sm text-ink-light font-medium">Click to upload</p>
-                  <p className="text-xs text-ink-faint">Images & videos up to 100MB</p>
+                  <p className="text-xs text-ink-faint">Select multiple images & videos (up to 20)</p>
                 </button>
               ) : (
                 <div className="space-y-3">
@@ -151,22 +168,67 @@ export default function CreatePostModal({ onClose, onCreated, credits, onBuyCred
                 </div>
               )}
             </div>
-            <input ref={fileRef} type="file" accept="image/*,video/*" onChange={handleFile} className="hidden" />
+            <input ref={fileRef} type="file" accept="image/*,video/*" multiple onChange={handleFiles} className="hidden" />
           </>
         ) : (
-          <div className="flex flex-col sm:flex-row">
-            <div className="sm:w-1/2 bg-surface-1 flex items-center justify-center min-h-[280px] p-3">
-              {mediaType === 'video' ? (
-                <video src={mediaPreview} controls className="max-w-full max-h-[320px] object-contain rounded-lg" />
-              ) : (
-                <img src={mediaPreview} alt="" className="max-w-full max-h-[320px] object-contain rounded-lg" />
-              )}
-            </div>
-            <div className="sm:w-1/2 p-4 flex flex-col border-l border-surface-3">
-              <textarea value={caption} onChange={e => setCaption(e.target.value)} placeholder="Write a caption..."
-                rows={6} className="flex-1 bg-transparent text-sm placeholder-ink-faint focus:outline-none resize-none" maxLength={2200} />
-              <div className="text-right text-[11px] text-ink-faint">{caption.length}/2,200</div>
-            </div>
+          <div className="flex-1 overflow-y-auto">
+            {tab === 'upload' && files.length > 1 ? (
+              <div className="p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-semibold text-ink-muted">{files.length} files selected</p>
+                  <button onClick={() => fileRef.current?.click()} className="text-xs font-semibold text-accent-violet hover:opacity-80">
+                    + Add more
+                  </button>
+                </div>
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                  {previews.map((p, i) => (
+                    <div key={i} className="relative aspect-square rounded-lg overflow-hidden bg-surface-2 group">
+                      {p.type === 'video' ? (
+                        <video src={p.url} className="w-full h-full object-cover" muted />
+                      ) : (
+                        <img src={p.url} alt="" className="w-full h-full object-cover" />
+                      )}
+                      <button onClick={() => removeFile(i)}
+                        className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Trash2 size={12} />
+                      </button>
+                      {p.type === 'video' && (
+                        <div className="absolute bottom-1 left-1 bg-black/60 rounded px-1.5 py-0.5 text-[10px] text-white font-medium">
+                          <Film size={10} className="inline mr-0.5" />VID
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <textarea value={caption} onChange={e => setCaption(e.target.value)} placeholder="Write a caption for all..."
+                  rows={3} className="input-field resize-none" maxLength={2200} />
+                <div className="text-right text-[11px] text-ink-faint">{caption.length}/2,200</div>
+                <input ref={fileRef} type="file" accept="image/*,video/*" multiple onChange={handleFiles} className="hidden" />
+              </div>
+            ) : (
+              <div className="flex flex-col sm:flex-row">
+                <div className="sm:w-1/2 bg-surface-1 flex items-center justify-center min-h-[280px] p-3">
+                  {tab === 'upload' && previews[0] ? (
+                    previews[0].type === 'video' ? (
+                      <video src={previews[0].url} controls className="max-w-full max-h-[320px] object-contain rounded-lg" />
+                    ) : (
+                      <img src={previews[0].url} alt="" className="max-w-full max-h-[320px] object-contain rounded-lg" />
+                    )
+                  ) : generatedUrl ? (
+                    mediaType === 'video' ? (
+                      <video src={generatedUrl} controls className="max-w-full max-h-[320px] object-contain rounded-lg" />
+                    ) : (
+                      <img src={generatedUrl} alt="" className="max-w-full max-h-[320px] object-contain rounded-lg" />
+                    )
+                  ) : null}
+                </div>
+                <div className="sm:w-1/2 p-4 flex flex-col border-l border-surface-3">
+                  <textarea value={caption} onChange={e => setCaption(e.target.value)} placeholder="Write a caption..."
+                    rows={6} className="flex-1 bg-transparent text-sm placeholder-ink-faint focus:outline-none resize-none" maxLength={2200} />
+                  <div className="text-right text-[11px] text-ink-faint">{caption.length}/2,200</div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
