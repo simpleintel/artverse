@@ -4,7 +4,10 @@ import { fileURLToPath } from 'url';
 import crypto from 'crypto';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const db = new Database(path.join(__dirname, '..', 'artverse.db'));
+const dbPath = process.env.NODE_ENV === 'production'
+  ? '/tmp/artverse.db'
+  : path.join(__dirname, '..', 'artverse.db');
+const db = new Database(dbPath);
 
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
@@ -86,8 +89,6 @@ db.exec(`
 
 // Add credits column if missing (migration-safe) — no free credits, must purchase
 try { db.exec('ALTER TABLE users ADD COLUMN credits INTEGER DEFAULT 0'); } catch {}
-// Zero out any previously granted free credits for users who never used them
-db.prepare("UPDATE users SET credits = 0 WHERE credits = 5 AND id NOT IN (SELECT DISTINCT user_id FROM credit_transactions)").run();
 // Add stripe_customer_id column if missing
 try { db.exec('ALTER TABLE users ADD COLUMN stripe_customer_id TEXT'); } catch {}
 // Stripe Connect columns for creator payouts
@@ -153,6 +154,9 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_tips_tipper ON tips(tipper_id);
   CREATE INDEX IF NOT EXISTS idx_withdrawals_user ON withdrawals(user_id);
 `);
+
+// Zero out any previously granted free credits for users who never used them
+try { db.prepare("UPDATE users SET credits = 0 WHERE credits = 5 AND id NOT IN (SELECT DISTINCT user_id FROM credit_transactions)").run(); } catch {}
 
 export function generateApiKey() {
   return 'av_' + crypto.randomBytes(32).toString('hex');

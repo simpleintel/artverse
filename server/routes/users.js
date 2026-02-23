@@ -8,9 +8,13 @@ import { authenticate, optionalAuth } from '../middleware/auth.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+const uploadsDir = process.env.NODE_ENV === 'production'
+  ? '/tmp/uploads'
+  : path.join(__dirname, '..', '..', 'uploads');
+
 const avatarUpload = multer({
   storage: multer.diskStorage({
-    destination: path.join(__dirname, '..', '..', 'uploads'),
+    destination: uploadsDir,
     filename: (_req, file, cb) => cb(null, `avatar-${uuidv4()}${path.extname(file.originalname)}`)
   }),
   limits: { fileSize: 5 * 1024 * 1024 }

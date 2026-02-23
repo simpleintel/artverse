@@ -25,7 +25,11 @@ app.get('/health', (_req, res) => res.status(200).send('ok'));
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
-app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
+const uploadsDir = process.env.NODE_ENV === 'production'
+  ? '/tmp/uploads'
+  : path.join(__dirname, '..', 'uploads');
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+app.use('/uploads', express.static(uploadsDir));
 
 // Load routes — wrapped in try/catch so the server still starts on failure
 try {
