@@ -6,6 +6,7 @@ import { authenticate } from '../middleware/auth.js';
 const router = Router();
 
 const NOVA_AI_PRICE = 499; // $4.99/mo in cents
+const MONTHLY_LIMIT = 100;
 const NOVA_AI_PRICE_ID_KEY = 'STRIPE_NOVA_PRICE_ID';
 
 function getOpenAI() {
@@ -23,13 +24,29 @@ function hasActiveSubscription(userId) {
   return false;
 }
 
+function getMonthlyUsage(userId) {
+  const firstOfMonth = new Date();
+  firstOfMonth.setDate(1);
+  firstOfMonth.setHours(0, 0, 0, 0);
+  const row = db.prepare(
+    "SELECT COUNT(*) as count FROM caption_usage WHERE user_id = ? AND created_at >= ?"
+  ).get(userId, firstOfMonth.toISOString());
+  return row?.count || 0;
+}
+
+function recordUsage(userId) {
+  db.prepare('INSERT INTO caption_usage (user_id) VALUES (?)').run(userId);
+}
+
 router.get('/status', authenticate, (req, res) => {
   const user = db.prepare('SELECT caption_sub_status, caption_sub_end FROM users WHERE id = ?').get(req.userId);
   const active = hasActiveSubscription(req.userId);
+  const used = active ? getMonthlyUsage(req.userId) : 0;
   res.json({
     subscribed: active,
     status: user?.caption_sub_status || 'none',
     endsAt: user?.caption_sub_end || null,
+    usage: { used, limit: MONTHLY_LIMIT, remaining: Math.max(0, MONTHLY_LIMIT - used) },
     price: { amount: NOVA_AI_PRICE, currency: 'usd', label: '$4.99/mo' },
   });
 });
@@ -49,7 +66,10 @@ router.post('/subscribe', authenticate, async (req, res) => {
 
     let priceId = process.env[NOVA_AI_PRICE_ID_KEY];
     if (!priceId) {
-      const product = await stripe.products.create({ name: 'Nova AI — Caption Generator', description: 'Unlimited AI-generated titles & descriptions for your uploads' });
+      const product = await stripe.products.create({
+        name: 'Nova AI — Caption Generator',
+        description: `Up to ${MONTHLY_LIMIT} AI-generated titles & descriptions per month. This is only for AI captioning — writing your own captions is always free.`,
+      });
       const price = await stripe.prices.create({ product: product.id, unit_amount: NOVA_AI_PRICE, currency: 'usd', recurring: { interval: 'month' } });
       priceId = price.id;
     }
@@ -120,7 +140,16 @@ router.post('/generate', authenticate, async (req, res) => {
     return res.status(403).json({
       error: 'Nova AI subscription required',
       subscriptionRequired: true,
-      message: 'Subscribe to Nova AI ($4.99/mo) for unlimited AI-generated titles and descriptions. Manual captions are always free.',
+      message: `This is only for AI-generated captions. Subscribe to Nova AI ($4.99/mo) for up to ${MONTHLY_LIMIT} AI captions per month. Writing your own captions is always free — no subscription needed.`,
+    });
+  }
+
+  const used = getMonthlyUsage(req.userId);
+  if (used >= MONTHLY_LIMIT) {
+    return res.status(429).json({
+      error: `Monthly limit reached (${MONTHLY_LIMIT}/${MONTHLY_LIMIT})`,
+      limitReached: true,
+      message: `You've used all ${MONTHLY_LIMIT} AI captions this month. Your limit resets on the 1st. You can still write captions manually — that's always free.`,
     });
   }
 
@@ -157,8 +186,11 @@ router.post('/generate', authenticate, async (req, res) => {
       response_format: { type: 'json_object' },
     });
 
+    recordUsage(req.userId);
+
     const result = JSON.parse(completion.choices[0].message.content);
-    res.json({ title: result.title || '', description: result.description || '' });
+    const remaining = MONTHLY_LIMIT - used - 1;
+    res.json({ title: result.title || '', description: result.description || '', usage: { used: used + 1, limit: MONTHLY_LIMIT, remaining } });
   } catch (err) {
     console.error('Caption generation error:', err.message);
     res.status(500).json({ error: 'Failed to generate caption' });

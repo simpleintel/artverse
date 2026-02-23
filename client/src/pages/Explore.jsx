@@ -51,8 +51,8 @@ export default function Explore() {
       </div>
 
       {showNote && (
-        <div className="mb-6 relative overflow-hidden rounded-2xl border border-accent-violet/15 bg-gradient-to-br from-white via-violet-50/40 to-cyan-50/30 shadow-card">
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-cyan-400 via-violet-500 to-pink-500" />
+        <div className="mb-6 relative overflow-hidden rounded-2xl border border-surface-3 bg-white shadow-card">
+          <div className="absolute top-0 left-0 right-0 h-1 bg-accent-violet" />
           <div className="px-5 sm:px-7 pt-6 pb-5">
             <div className="flex items-start justify-between gap-3 mb-4">
               <div className="flex items-center gap-2.5">
@@ -100,7 +100,7 @@ export default function Explore() {
                     <span className="block mt-1 font-semibold text-ink">The wonder remains.</span>
                   </p>
                   <div className="pt-2">
-                    <div className="h-px bg-gradient-to-r from-transparent via-accent-violet/20 to-transparent" />
+                    <div className="h-px bg-surface-3" />
                   </div>
                   <p className="text-center text-ink font-medium tracking-wide">
                     Welcome to your view of the new light.

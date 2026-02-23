@@ -59,7 +59,7 @@ export default function Navbar() {
           <div className="w-8 h-8 rounded-xl gradient-accent flex items-center justify-center shrink-0 shadow-sm">
             <Sparkles size={17} className="text-white" />
           </div>
-          <span className="text-xl font-extrabold gradient-text hidden lg:block tracking-tight">ArtVerse</span>
+          <span className="text-xl font-extrabold text-ink hidden lg:block tracking-tight">Nova</span>
         </Link>
 
         {/* Search */}

@@ -32,7 +32,7 @@ export default function Register() {
   const handleGoogle = async (credentialResponse) => {
     try {
       await googleLogin(credentialResponse.credential);
-      toast.success('Welcome to ArtVerse!');
+      toast.success('Welcome to Nova!');
       navigate('/');
     } catch (err) {
       toast.error(err.response?.data?.error || 'Google sign-up failed');
@@ -46,7 +46,7 @@ export default function Register() {
           <div className="inline-flex w-16 h-16 rounded-2xl gradient-accent items-center justify-center mb-5 shadow-lg">
             <Sparkles size={30} className="text-white" />
           </div>
-          <h1 className="text-3xl font-extrabold gradient-text mb-2 tracking-tight">Join ArtVerse</h1>
+          <h1 className="text-3xl font-extrabold text-ink mb-2 tracking-tight">Join Nova</h1>
           <p className="text-ink-faint text-sm">Create AI art. Share with the world.</p>
         </div>
 

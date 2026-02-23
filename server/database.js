@@ -106,6 +106,17 @@ try { db.exec('ALTER TABLE users ADD COLUMN caption_sub_status TEXT DEFAULT \'no
 try { db.exec('ALTER TABLE users ADD COLUMN caption_sub_end DATETIME'); } catch {}
 
 db.exec(`
+  CREATE TABLE IF NOT EXISTS caption_usage (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
+  CREATE INDEX IF NOT EXISTS idx_caption_usage_user ON caption_usage(user_id);
+  CREATE INDEX IF NOT EXISTS idx_caption_usage_date ON caption_usage(created_at);
+`);
+
+db.exec(`
   CREATE TABLE IF NOT EXISTS verification_codes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,

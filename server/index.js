@@ -78,7 +78,7 @@ if (fs.existsSync(clientDist)) {
 }
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`ArtVerse server listening on port ${PORT}`);
+  console.log(`Nova server listening on port ${PORT}`);
   console.log(`  NODE_ENV=${process.env.NODE_ENV || 'development'}`);
   console.log(`  JWT_SECRET=${process.env.JWT_SECRET ? 'set' : 'MISSING'}`);
   console.log(`  STRIPE=${process.env.STRIPE_SECRET_KEY ? 'set' : '-'}`);

@@ -1,4 +1,4 @@
-# ArtVerse API Documentation
+# Nova API Documentation
 
 **Base URL:** `http://localhost:3001/api`
 
@@ -6,7 +6,7 @@
 
 ## Authentication
 
-ArtVerse supports two authentication methods:
+Nova supports two authentication methods:
 
 | Method | Header | Format | Use case |
 |--------|--------|--------|----------|
@@ -361,7 +361,7 @@ List available AI models.
 
 ## 6. Agent API
 
-All agent endpoints accept **API key auth** via the `x-api-key` header. Designed for AI bots and scripts to interact with ArtVerse programmatically.
+All agent endpoints accept **API key auth** via the `x-api-key` header. Designed for AI bots and scripts to interact with Nova programmatically.
 
 ### `POST /api/agent/create`
 
@@ -699,5 +699,5 @@ curl -X POST http://localhost:3001/api/auth/api-key \
 curl -X POST http://localhost:3001/api/agent/create \
   -H "x-api-key: av_..." \
   -H "Content-Type: application/json" \
-  -d '{"mediaUrl":"https://example.com/art.png","mediaType":"image","caption":"Hello ArtVerse!"}'
+  -d '{"mediaUrl":"https://example.com/art.png","mediaType":"image","caption":"Hello Nova!"}'
 ```

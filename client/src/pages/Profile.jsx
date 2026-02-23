@@ -106,7 +106,7 @@ export default function Profile() {
       {/* Header */}
       <div className="card mb-4 overflow-hidden">
         {/* Banner */}
-        <div className="relative h-36 sm:h-48 bg-gradient-to-br from-violet-100 via-cyan-50 to-pink-50 group/banner">
+        <div className="relative h-36 sm:h-48 bg-violet-50 group/banner">
           {profile.banner && (
             <img src={profile.banner} alt="" className="w-full h-full object-cover" />
           )}

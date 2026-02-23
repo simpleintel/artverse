@@ -57,7 +57,7 @@ router.post('/checkout/credits', authenticate, async (req, res) => {
       line_items: [{
         price_data: {
           currency: 'usd',
-          product_data: { name: `ArtVerse ${pack.description}`, description: `${pack.credits} generation credits` },
+          product_data: { name: `Nova ${pack.description}`, description: `${pack.credits} generation credits` },
           unit_amount: pack.price_cents,
         },
         quantity: 1,

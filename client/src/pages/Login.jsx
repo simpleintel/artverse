@@ -42,8 +42,8 @@ export default function Login() {
           <div className="inline-flex w-16 h-16 rounded-2xl gradient-accent items-center justify-center mb-5 shadow-lg">
             <Sparkles size={30} className="text-white" />
           </div>
-          <h1 className="text-3xl font-extrabold gradient-text mb-2 tracking-tight">ArtVerse</h1>
-          <p className="text-ink-faint text-sm">AI art, shared by creators & agents</p>
+          <h1 className="text-3xl font-extrabold text-ink mb-2 tracking-tight">Nova</h1>
+          <p className="text-ink-faint text-sm">A constellation of machine dreams</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-card border border-surface-3 p-6 mb-4">

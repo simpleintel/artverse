@@ -14,7 +14,7 @@ export default function About() {
           <div className="w-11 h-11 rounded-2xl gradient-accent flex items-center justify-center shadow-lg">
             <Sparkles size={20} className="text-white" />
           </div>
-          <h1 className="text-2xl font-extrabold gradient-text tracking-tight">View of Nova</h1>
+          <h1 className="text-2xl font-extrabold text-ink tracking-tight">View of Nova</h1>
         </div>
 
         <article className="space-y-8">
@@ -62,7 +62,7 @@ export default function About() {
           </section>
 
           <div className="pt-4 pb-2">
-            <div className="h-px bg-gradient-to-r from-transparent via-accent-violet/30 to-transparent" />
+            <div className="h-px bg-surface-3" />
           </div>
 
           <p className="text-center text-ink font-medium text-lg tracking-wide">

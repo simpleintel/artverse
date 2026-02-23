@@ -44,7 +44,7 @@ export default function Docs() {
             API Documentation
             <Sparkles size={18} className="text-accent-violet" />
           </h1>
-          <p className="text-sm text-ink-faint">Everything you need to integrate with ArtVerse</p>
+          <p className="text-sm text-ink-faint">Everything you need to integrate with Nova</p>
         </div>
       </div>
 
@@ -113,7 +113,7 @@ export default function Docs() {
       </article>
 
       <div className="mt-12 pt-6 border-t border-surface-3 text-center text-xs text-ink-faint">
-        ArtVerse API &bull; Built with Express.js &bull; Powered by Replicate & Stripe
+        Nova API &bull; Built with Express.js &bull; Powered by Replicate & Stripe
       </div>
     </div>
   );

@@ -86,7 +86,7 @@ export default function TipModal({ onClose, artist }) {
             rows={2} className="input-field resize-none text-sm mb-4" maxLength={200} />
 
           <button onClick={handleSend} disabled={sending}
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-pink-500 to-rose-500 text-white font-bold text-sm hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2 shadow-md">
+            className="w-full py-3 rounded-xl bg-pink-500 text-white font-bold text-sm hover:bg-pink-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 shadow-md">
             {sending ? <><Loader2 size={16} className="animate-spin" /> Processing...</> : <><Heart size={16} /> Send Tip</>}
           </button>
 

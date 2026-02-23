@@ -41,7 +41,7 @@ export default function BuyCreditsModal({ onClose, credits }) {
           <div className="flex items-center justify-center gap-2 mb-5 py-3 bg-violet-50 rounded-xl">
             <Sparkles size={16} className="text-accent-violet" />
             <span className="text-sm font-semibold">Current balance:</span>
-            <span className="text-lg font-bold gradient-text">{credits ?? 0}</span>
+            <span className="text-lg font-bold text-accent-violet">{credits ?? 0}</span>
             <span className="text-sm text-ink-muted">credits</span>
           </div>
 

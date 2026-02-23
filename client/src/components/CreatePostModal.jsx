@@ -64,10 +64,13 @@ export default function CreatePostModal({ onClose, onCreated, credits, onBuyCred
 
       const { data } = await api.post('/caption/generate', { imageUrl });
       setCaption(data.title ? `${data.title}\n\n${data.description}` : data.description);
-      toast.success('Caption generated!');
+      if (data.usage) setCaptionSub(prev => prev ? { ...prev, usage: data.usage } : prev);
+      toast.success(`Caption generated! (${data.usage?.remaining ?? '?'} left this month)`);
     } catch (err) {
       if (err.response?.data?.subscriptionRequired) {
-        toast.error('Nova AI subscription required — $4.99/mo');
+        toast.error('Nova AI subscription required — $4.99/mo for 100 AI captions. Manual captions are always free.');
+      } else if (err.response?.data?.limitReached) {
+        toast.error(err.response.data.message);
       } else {
         toast.error(err.response?.data?.error || 'Failed to generate caption');
       }
@@ -126,23 +129,36 @@ export default function CreatePostModal({ onClose, onCreated, credits, onBuyCred
   const hasMedia = tab === 'upload' ? files.length > 0 : !!generatedUrl;
   const isSubscribed = captionSub?.subscribed;
 
+  const usage = captionSub?.usage;
+  const limitReached = usage && usage.remaining <= 0;
+
   const AutoCaptionButton = () => (
-    <div className="mt-2">
+    <div className="mt-3 pt-3 border-t border-surface-3">
       {isSubscribed ? (
-        <button onClick={handleAutoCaption} disabled={captioning}
-          className="flex items-center gap-1.5 text-xs font-semibold text-violet-600 hover:text-violet-800 transition-colors disabled:opacity-40">
-          {captioning ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
-          {captioning ? 'Generating caption...' : 'Auto Caption with AI'}
-        </button>
-      ) : (
-        <div className="flex items-center gap-2">
-          <button onClick={handleSubscribe}
-            className="flex items-center gap-1.5 text-xs font-semibold text-amber-600 hover:text-amber-800 transition-colors">
-            <Crown size={12} /> Nova AI — Auto Caption ($4.99/mo)
-          </button>
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <button onClick={handleAutoCaption} disabled={captioning || limitReached}
+              className="flex items-center gap-1.5 text-xs font-semibold text-violet-600 hover:text-violet-800 transition-colors disabled:opacity-40">
+              {captioning ? <Loader2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
+              {captioning ? 'Generating...' : limitReached ? 'Monthly limit reached' : 'Auto Caption with AI'}
+            </button>
+            {usage && (
+              <span className="text-[10px] text-ink-faint">{usage.remaining}/{usage.limit} left</span>
+            )}
+          </div>
+          {limitReached && (
+            <p className="text-[10px] text-amber-600 mb-1">You've used all 100 AI captions this month. Resets on the 1st. You can still type captions manually.</p>
+          )}
         </div>
+      ) : (
+        <button onClick={handleSubscribe}
+          className="flex items-center gap-1.5 text-xs font-semibold text-amber-600 hover:text-amber-800 transition-colors">
+          <Crown size={12} /> Nova AI — Auto Caption ($4.99/mo, 100/month)
+        </button>
       )}
-      <p className="text-[10px] text-ink-faint mt-1">AI-generated titles & descriptions require Nova AI. Manual captions are always free.</p>
+      <p className="text-[10px] text-ink-faint mt-1">
+        This is <strong>only</strong> for AI-generated titles & descriptions. Writing your own captions is always free — no subscription needed.
+      </p>
     </div>
   );
 

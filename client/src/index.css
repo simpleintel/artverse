@@ -12,10 +12,10 @@
 
 @layer utilities {
   .gradient-accent {
-    @apply bg-gradient-to-r from-accent-cyan via-accent-violet to-accent-pink;
+    @apply bg-accent-violet;
   }
   .gradient-text {
-    @apply bg-gradient-to-r from-accent-cyan via-accent-violet to-accent-pink bg-clip-text text-transparent;
+    @apply text-accent-violet;
   }
 }
 
