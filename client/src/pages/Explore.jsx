@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Heart, MessageCircle, Play, Sparkles, X, ChevronDown, ChevronUp } from 'lucide-react';
 import api from '../api';
 
 export default function Explore() {
+  const location = useLocation();
   const [posts, setPosts] = useState([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -17,10 +18,12 @@ export default function Explore() {
       const { data } = await api.get(`/posts/explore?page=${p}&limit=24`);
       if (p === 1) setPosts(data); else setPosts(prev => [...prev, ...data]);
       setHasMore(data.length === 24);
-    } catch {} finally { setLoading(false); }
+    } catch (err) {
+      console.error('Failed to load posts:', err);
+    } finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { fetchPosts(1); }, [fetchPosts]);
+  useEffect(() => { setPage(1); setLoading(true); fetchPosts(1); }, [fetchPosts, location.key]);
 
   const lastRef = useCallback(node => {
     if (loading) return;
@@ -130,7 +133,7 @@ export default function Explore() {
               className="relative aspect-square group overflow-hidden rounded-xl bg-surface-2 shadow-card hover:shadow-card-hover transition-shadow">
               {post.mediaType === 'video' ? (
                 <>
-                  <video src={post.mediaUrl} className="w-full h-full object-cover" preload="metadata" muted />
+                  <video src={`${post.mediaUrl}#t=0.5`} className="w-full h-full object-cover" preload="metadata" muted playsInline />
                   <div className="absolute top-2.5 right-2.5"><Play size={16} className="text-white drop-shadow-lg" fill="white" /></div>
                 </>
               ) : (

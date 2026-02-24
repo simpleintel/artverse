@@ -124,7 +124,7 @@ export default function PostCard({ post, onDelete }) {
       {/* Media */}
       <div className="relative cursor-pointer mx-4 mb-3 rounded-lg overflow-hidden bg-surface-2" onClick={handleDoubleTap}>
         {post.mediaType === 'video' ? (
-          <video src={post.mediaUrl} controls className="w-full max-h-[520px] object-contain" preload="metadata" />
+          <video src={post.mediaUrl} controls className="w-full max-h-[520px] object-contain" preload="metadata" playsInline poster="" />
         ) : (
           <img src={post.mediaUrl} alt={post.caption} className="w-full max-h-[520px] object-contain" loading="lazy" />
         )}

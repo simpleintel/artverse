@@ -260,7 +260,7 @@ export default function Profile() {
             <button key={post.id} onClick={() => setViewMode('list')}
               className="relative aspect-square group overflow-hidden rounded-xl bg-surface-2 shadow-card hover:shadow-card-hover transition-shadow">
               {post.mediaType === 'video' ? (
-                <><video src={post.mediaUrl} className="w-full h-full object-cover" preload="metadata" muted />
+                <><video src={`${post.mediaUrl}#t=0.5`} className="w-full h-full object-cover" preload="metadata" muted playsInline />
                   <Play size={16} className="absolute top-2 right-2 text-white drop-shadow-lg" fill="white" /></>
               ) : (
                 <img src={post.mediaUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
