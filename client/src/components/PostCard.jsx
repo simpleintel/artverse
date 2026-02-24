@@ -1,8 +1,9 @@
 import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, MessageCircle, Repeat2, Bookmark, MoreHorizontal, Sparkles, Copy, Check } from 'lucide-react';
+import { Heart, MessageCircle, Repeat2, Bookmark, MoreHorizontal, Sparkles, Copy, Check, DollarSign } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import CommentSection from './CommentSection';
+import TipModal from './TipModal';
 import api from '../api';
 import toast from 'react-hot-toast';
 
@@ -16,6 +17,7 @@ export default function PostCard({ post, onDelete }) {
   const [showMenu, setShowMenu] = useState(false);
   const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showTip, setShowTip] = useState(false);
   const lastTap = useRef(0);
 
   const handleLike = async () => {
@@ -148,9 +150,11 @@ export default function PostCard({ post, onDelete }) {
               <MessageCircle size={19} strokeWidth={1.5} className="text-ink-faint group-hover:text-accent-blue transition-colors" />
               {commentCount > 0 && <span className="text-[13px] font-medium text-ink-faint">{fmtCount(commentCount)}</span>}
             </button>
-            <button className="group">
-              <Repeat2 size={19} strokeWidth={1.5} className="text-ink-faint group-hover:text-green-500 transition-colors" />
-            </button>
+            {user && user.id !== post.user.id && (
+              <button onClick={() => setShowTip(true)} className="flex items-center gap-1.5 group" title={`Tip @${post.user.username}`}>
+                <DollarSign size={19} strokeWidth={1.5} className="text-ink-faint group-hover:text-pink-500 transition-colors" />
+              </button>
+            )}
           </div>
           <button onClick={() => setSaved(!saved)} className="group">
             <Bookmark size={19} strokeWidth={saved ? 0 : 1.5}
@@ -169,6 +173,10 @@ export default function PostCard({ post, onDelete }) {
           </div>
         )}
       </div>
+
+      {showTip && (
+        <TipModal artist={post.user} onClose={() => setShowTip(false)} />
+      )}
     </article>
   );
 }

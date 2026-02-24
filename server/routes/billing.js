@@ -9,6 +9,10 @@ function getStripe() {
   return _stripe;
 }
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
+const isLiveStripe = (process.env.STRIPE_SECRET_KEY || '').startsWith('sk_live_');
+const CONNECT_RETURN_URL = isLiveStripe
+  ? (process.env.PRODUCTION_URL || CLIENT_URL).replace(/^http:/, 'https:')
+  : CLIENT_URL;
 
 const CREDIT_PACKS = [
   { id: 'starter', credits: 50, price_cents: 499, label: '50 credits', description: 'Starter Pack' },
@@ -65,8 +69,8 @@ router.post('/checkout/credits', authenticate, async (req, res) => {
         quantity: 1,
       }],
       metadata: { userId: req.userId.toString(), type: 'credits', packId: pack.id, credits: pack.credits.toString() },
-      success_url: `${CLIENT_URL}/profile/${db.prepare('SELECT username FROM users WHERE id = ?').get(req.userId).username}?purchase=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${CLIENT_URL}?purchase=cancelled`,
+      success_url: `${CONNECT_RETURN_URL}/profile/${db.prepare('SELECT username FROM users WHERE id = ?').get(req.userId).username}?purchase=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${CONNECT_RETURN_URL}?purchase=cancelled`,
     });
 
     res.json({ url: session.url, sessionId: session.id });
@@ -122,8 +126,8 @@ router.post('/checkout/tip', authenticate, async (req, res) => {
         quantity: 1,
       }],
       metadata: { userId: req.userId.toString(), type: 'tip', artistId: artist.id.toString(), tipId: tipRecord.lastInsertRowid.toString() },
-      success_url: `${CLIENT_URL}/profile/${artist.username}?tip=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${CLIENT_URL}/profile/${artist.username}?tip=cancelled`,
+      success_url: `${CONNECT_RETURN_URL}/profile/${artist.username}?tip=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${CONNECT_RETURN_URL}/profile/${artist.username}?tip=cancelled`,
     });
 
     db.prepare('UPDATE tips SET stripe_session_id = ? WHERE id = ?').run(session.id, tipRecord.lastInsertRowid);
@@ -221,8 +225,8 @@ router.post('/connect/onboard', authenticate, async (req, res) => {
 
     const link = await getStripe().accountLinks.create({
       account: connectId,
-      refresh_url: `${CLIENT_URL}/profile/${user.username}?connect=refresh`,
-      return_url: `${CLIENT_URL}/profile/${user.username}?connect=complete`,
+      refresh_url: `${CONNECT_RETURN_URL}/profile/${user.username}?connect=refresh`,
+      return_url: `${CONNECT_RETURN_URL}/profile/${user.username}?connect=complete`,
       type: 'account_onboarding',
     });
 
