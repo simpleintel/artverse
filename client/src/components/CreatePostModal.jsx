@@ -20,6 +20,7 @@ export default function CreatePostModal({ onClose, onCreated, credits, onBuyCred
   const [mediaType, setMediaType] = useState('image');
   const [captioning, setCaptioning] = useState(false);
   const [captionSub, setCaptionSub] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const fileRef = useRef(null);
 
   useEffect(() => {
@@ -105,25 +106,49 @@ export default function CreatePostModal({ onClose, onCreated, credits, onBuyCred
   };
 
   const handleSubmit = async () => {
-    if (submitting) return; setSubmitting(true);
+    if (submitting) return;
+    if (tab === 'upload' && files.length === 0) {
+      toast.error('Please select at least one file');
+      return;
+    }
+    if (tab === 'generate' && !generatedUrl) {
+      toast.error('Please generate media first');
+      return;
+    }
+    setSubmitting(true);
+    setUploadProgress(0);
+    const progressConfig = {
+      onUploadProgress: (e) => {
+        const pct = e.total ? Math.round((e.loaded / e.total) * 100) : 0;
+        setUploadProgress(pct);
+      },
+    };
     try {
-      if (tab === 'upload' && files.length > 0) {
+      if (tab === 'upload') {
+        const form = new FormData();
         if (files.length === 1) {
-          const form = new FormData(); form.append('media', files[0]); form.append('caption', caption);
-          await api.post('/posts', form);
+          form.append('media', files[0]);
+          form.append('caption', caption);
+          await api.post('/posts', form, progressConfig);
         } else {
-          const form = new FormData();
           files.forEach(f => form.append('media', f));
           form.append('caption', caption);
-          await api.post('/posts/batch', form);
+          await api.post('/posts/batch', form, progressConfig);
         }
       } else if (tab === 'generate' && generatedUrl) {
         await api.post('/posts', { mediaUrl: generatedUrl, mediaType, caption, aiModel: generatedModel, aiPrompt: prompt });
       }
-      toast.success(files.length > 1 ? `${files.length} creations shared!` : 'Shared!');
+      setUploadProgress(100);
+      toast.success(files.length > 1 ? `${files.length} creations uploaded!` : 'Uploaded!');
       onCreated?.(); onClose();
-    } catch (err) { toast.error(err.response?.data?.error || 'Failed'); }
-    finally { setSubmitting(false); }
+    } catch (err) {
+      const msg = err.response?.data?.error || err.message || 'Upload failed — please try again';
+      toast.error(msg);
+      console.error('Upload error:', err);
+    } finally {
+      setSubmitting(false);
+      setUploadProgress(0);
+    }
   };
 
   const hasMedia = tab === 'upload' ? files.length > 0 : !!generatedUrl;
@@ -172,12 +197,32 @@ export default function CreatePostModal({ onClose, onCreated, credits, onBuyCred
           <h2 className="text-sm font-bold">New Creation</h2>
           {step === 'caption' && hasMedia ? (
             <button onClick={handleSubmit} disabled={submitting} className="text-accent-violet text-sm font-bold hover:opacity-80 disabled:opacity-40 transition-opacity">
-              {submitting ? 'Sharing...' : 'Share'}
+              {submitting ? `${uploadProgress < 100 ? `${uploadProgress}%` : 'Processing...'}` : 'Upload'}
             </button>
           ) : (
             <button onClick={onClose} className="text-ink-faint hover:text-ink transition-colors"><X size={20} /></button>
           )}
         </div>
+
+        {submitting && tab === 'upload' && (
+          <div className="px-4 pt-2 pb-1 shrink-0">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[11px] font-medium text-ink-muted">
+                {uploadProgress < 100 ? 'Uploading...' : 'Processing...'}
+              </span>
+              <span className="text-[11px] font-semibold text-accent-violet">{uploadProgress}%</span>
+            </div>
+            <div className="w-full h-1.5 bg-surface-3 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-accent-violet rounded-full transition-all duration-300 ease-out"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
+            {files.length > 1 && (
+              <p className="text-[10px] text-ink-faint mt-1">{files.length} files • {(files.reduce((a, f) => a + f.size, 0) / (1024 * 1024)).toFixed(1)} MB total</p>
+            )}
+          </div>
+        )}
 
         {step === 'select' ? (
           <>
