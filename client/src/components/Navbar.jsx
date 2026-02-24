@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Home, Compass, PlusCircle, User, Search, X, LogOut, Sparkles, Zap, Book, Info } from 'lucide-react';
+import { Home, PlusCircle, User, Search, X, LogOut, Sparkles, Zap, Book, Info } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import CreatePostModal from './CreatePostModal';
 import BuyCreditsModal from './BuyCreditsModal';
@@ -97,8 +97,7 @@ export default function Navbar() {
         <div className="flex-1 flex flex-col gap-0.5 px-1">
           {user && (
             <>
-              <NavItem to="/" icon={Compass} label="Discover" match={['/', '/explore']} />
-              <NavItem to="/feed" icon={Home} label="Timeline" match={['/feed']} />
+              <NavItem to="/" icon={Home} label="Home" match={['/', '/explore']} />
               <button onClick={() => setShowCreate(true)}
                 className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-ink-muted hover:bg-surface-2 hover:text-ink transition-all mt-1">
                 <div className="w-[22px] h-[22px] rounded-md gradient-accent flex items-center justify-center">
@@ -162,8 +161,7 @@ export default function Navbar() {
       {/* Mobile bottom bar */}
       <nav className="sm:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface-0 border-t border-surface-3 px-2 safe-area-pb">
         <div className="flex items-center justify-around h-14">
-          <Link to="/" className={location.pathname === '/' ? 'text-ink' : 'text-ink-faint'}><Compass size={25} strokeWidth={1.5} /></Link>
-          <Link to="/feed" className={location.pathname === '/feed' ? 'text-ink' : 'text-ink-faint'}><Home size={25} strokeWidth={1.5} /></Link>
+          <Link to="/" className={location.pathname === '/' ? 'text-ink' : 'text-ink-faint'}><Home size={25} strokeWidth={1.5} /></Link>
           {user && (
             <button onClick={() => setShowCreate(true)} className="w-10 h-10 rounded-xl gradient-accent flex items-center justify-center shadow-md">
               <PlusCircle size={20} className="text-white" />

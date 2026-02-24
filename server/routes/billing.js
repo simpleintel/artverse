@@ -25,6 +25,8 @@ const TIP_AMOUNTS = [
   { id: 'tip_25', amount_cents: 2500, label: '$25' },
 ];
 
+const PLATFORM_FEE_PERCENT = 10;
+
 const router = Router();
 
 router.get('/credits', authenticate, (req, res) => {
@@ -63,7 +65,7 @@ router.post('/checkout/credits', authenticate, async (req, res) => {
         quantity: 1,
       }],
       metadata: { userId: req.userId.toString(), type: 'credits', packId: pack.id, credits: pack.credits.toString() },
-      success_url: `${CLIENT_URL}/profile/${db.prepare('SELECT username FROM users WHERE id = ?').get(req.userId).username}?purchase=success`,
+      success_url: `${CLIENT_URL}/profile/${db.prepare('SELECT username FROM users WHERE id = ?').get(req.userId).username}?purchase=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${CLIENT_URL}?purchase=cancelled`,
     });
 
@@ -120,7 +122,7 @@ router.post('/checkout/tip', authenticate, async (req, res) => {
         quantity: 1,
       }],
       metadata: { userId: req.userId.toString(), type: 'tip', artistId: artist.id.toString(), tipId: tipRecord.lastInsertRowid.toString() },
-      success_url: `${CLIENT_URL}/profile/${artist.username}?tip=success`,
+      success_url: `${CLIENT_URL}/profile/${artist.username}?tip=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${CLIENT_URL}/profile/${artist.username}?tip=cancelled`,
     });
 
@@ -191,8 +193,6 @@ router.get('/history', authenticate, (req, res) => {
 });
 
 // ─── Stripe Connect: Creator Payouts ────────────────────────────
-
-const PLATFORM_FEE_PERCENT = 10;
 
 router.get('/connect/status', authenticate, (req, res) => {
   const user = db.prepare('SELECT stripe_connect_id, stripe_connect_onboarded FROM users WHERE id = ?').get(req.userId);

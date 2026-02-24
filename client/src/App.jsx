@@ -2,8 +2,6 @@ import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
-import ProtectedRoute from './components/ProtectedRoute';
-import Feed from './pages/Feed';
 import Explore from './pages/Explore';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
@@ -40,8 +38,8 @@ export default function App() {
           <Route path="/docs" element={<Docs />} />
           <Route path="/about" element={<About />} />
           <Route path="/" element={<Explore />} />
-          <Route path="/feed" element={<ProtectedRoute><Feed /></ProtectedRoute>} />
-          <Route path="/explore" element={<Explore />} />
+          <Route path="/explore" element={<Navigate to="/" />} />
+          <Route path="/feed" element={<Navigate to="/" />} />
           <Route path="/profile/:username" element={<Profile />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>

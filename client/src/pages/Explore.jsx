@@ -49,7 +49,7 @@ export default function Explore() {
   return (
     <div className="max-w-[960px] mx-auto px-4 sm:px-5 py-6">
       <div className="mb-5 flex items-center justify-between">
-        <h1 className="text-xl font-bold">Discover</h1>
+        <h1 className="text-xl font-bold">Home</h1>
         <span className="text-xs font-medium text-ink-faint bg-surface-2 rounded-full px-3 py-1 border border-surface-3">A Constellation of Machine Dreams</span>
       </div>
 
